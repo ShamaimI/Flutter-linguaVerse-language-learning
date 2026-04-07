@@ -1,0 +1,124 @@
+name: linguaverse
+description: LinguaVerse — AI-powered language learning app
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Dependencies
+# ─────────────────────────────────────────────────────────────────────────────
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Navigation ──────────────────────────────────────────────────────────────
+  go_router: ^13.2.0
+  # Declarative routing. Equivalent to React Router v6.
+  # Usage: context.go('/onboarding/avatar', extra: { 'languageCode': 'es' })
+
+  # ── State management ────────────────────────────────────────────────────────
+  provider: ^6.1.1
+  # Simple, well-supported state management. Equivalent to React Context + useReducer.
+  # Used for: UserState, LessonState, TranslationState
+
+  # ── HTTP & API ───────────────────────────────────────────────────────────────
+  http: ^1.2.1
+  # Standard HTTP package. Used for Claude API calls.
+  # Your teammate wires this to the AI agent service layer.
+
+  # ── Animations ──────────────────────────────────────────────────────────────
+  lottie: ^3.1.0
+  # Plays Lottie .json animation files.
+  # Add free files from lottiefiles.com → assets/animations/
+
+  # ── Local storage ───────────────────────────────────────────────────────────
+  shared_preferences: ^2.2.2
+  # Key-value storage. Used to persist: onboarding complete flag,
+  # cached user preferences, last-seen lesson ID.
+
+  flutter_secure_storage: ^9.0.0
+  # Encrypted storage. Used for: API keys (if needed client-side),
+  # auth tokens from Firebase.
+
+  # ── Firebase ─────────────────────────────────────────────────────────────────
+  firebase_core: ^2.27.0
+  firebase_auth: ^4.17.0
+  cloud_firestore: ^4.15.0
+  firebase_analytics: ^10.8.0
+  # Your teammate sets up the Firebase project and adds google-services.json (Android)
+  # You don't need to configure these — they just need to be in pubspec.yaml
+
+  # ── Voice / TTS ───────────────────────────────────────────────────────────────
+  speech_to_text: ^6.6.0
+  # Microphone input for speaking exercises and voice translation.
+  flutter_tts: ^4.0.2
+  # Text-to-speech for lesson audio and translation playback.
+
+  # ── Images ────────────────────────────────────────────────────────────────────
+  cached_network_image: ^3.3.1
+  # Caches network images — used for picture-word exercises.
+  flutter_svg: ^2.0.9
+  # Renders SVG files — used for avatar SVGs (avataaars.io exports).
+
+  # ── Charts ───────────────────────────────────────────────────────────────────
+  fl_chart: ^0.67.0
+  # Used for: XP progress ring on home, streak heatmap on profile.
+
+  # ── Loading state ────────────────────────────────────────────────────────────
+  shimmer: ^3.0.0
+  # Skeleton loading effect. Wrap any widget in Shimmer.fromColors()
+  # while data is loading.
+
+  # ── Fonts ────────────────────────────────────────────────────────────────────
+  google_fonts: ^6.2.1
+  # Access to all Google Fonts. Currently using Nunito for the app font.
+  # Switch font by changing fontFamily in AppTheme.
+
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  integration_test:
+    sdk: flutter
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Flutter config
+# ─────────────────────────────────────────────────────────────────────────────
+flutter:
+  uses-material-design: true
+
+  # ── Assets ──────────────────────────────────────────────────────────────────
+  # Create these folders and add the files listed below.
+  assets:
+    - assets/animations/
+    # Download these free Lottie files from lottiefiles.com:
+    #   celebrate.json  — search "confetti celebration"
+    #   correct.json    — search "checkmark success green"
+    #   wrong.json      — search "error cross shake red"
+    #   waveform.json   — search "sound wave pulse"
+    #   streak.json     — search "fire flame loop"
+    #   achievement.json — search "trophy badge unlock"
+    #   loading.json    — search "minimal dots loading"
+
+    - assets/avatars/
+    # Placeholder SVG avatars — export from avataaars.io
+    # Filename format: avatar_mia.svg, avatar_kai.svg, etc.
+    # Until real SVGs are ready, the emoji fallback in AvatarModel is used.
+
+    - assets/images/
+    # App icon source file, onboarding illustrations from undraw.co
+
+  # ── Fonts ───────────────────────────────────────────────────────────────────
+  # Using google_fonts package — no font files to download.
+  # If you want to bundle Nunito locally for offline use:
+  # fonts:
+  #   - family: Nunito
+  #     fonts:
+  #       - asset: assets/fonts/Nunito-Regular.ttf
+  #       - asset: assets/fonts/Nunito-SemiBold.ttf  weight: 600
+  #       - asset: assets/fonts/Nunito-Bold.ttf      weight: 700
+  #       - asset: assets/fonts/Nunito-ExtraBold.ttf weight: 800
