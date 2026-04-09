@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,20 +57,105 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
     HapticFeedback.lightImpact();
-
     setState(() => _isLoading = true);
 
-    // TODO: Replace with real Firebase Auth call
-    // await FirebaseAuth.instance.signInWithEmailAndPassword(
-    //   email: _emailController.text.trim(),
-    //   password: _passwordController.text,
-    // );
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    await Future.delayed(const Duration(seconds: 2)); // remove when wiring Firebase
+      final prefs = await SharedPreferences.getInstance();
+      final hasOnboarded = prefs.getBool('onboardingComplete') ?? false;
 
-    setState(() => _isLoading = false);
+      if (mounted) {
+        context.go(hasOnboarded ? '/home' : '/onboarding/language');
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Login failed. Please try again.';
+      if (e.code == 'user-not-found') message = 'No account found with this email.';
+      if (e.code == 'wrong-password') message = 'Incorrect password.';
+      if (e.code == 'invalid-email') message = 'Invalid email address.';
+      if (e.code == 'user-disabled') message = 'This account has been disabled.';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-    if (mounted) context.go('/home');
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+      await FirebaseAuth.instance.signInWithPopup(googleProvider);
+
+      final prefs = await SharedPreferences.getInstance();
+      final hasOnboarded = prefs.getBool('onboardingComplete') ?? false;
+
+      if (mounted) {
+        context.go(hasOnboarded ? '/home' : '/onboarding/language');
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Google sign-in failed.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your email above first.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password reset email sent! Check your inbox.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message ?? 'Failed to send reset email.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -88,8 +175,6 @@ class _LoginScreenState extends State<LoginScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 32),
-
-                    // ── Logo / brand ───────────────────────────────────────
                     Center(
                       child: Container(
                         width: 76,
@@ -110,9 +195,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
                     Center(
                       child: Text(
                         'LinguaVerse',
@@ -123,7 +206,6 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-
                     Center(
                       child: Text(
                         'Welcome back! Log in to continue.',
@@ -133,10 +215,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 40),
-
-                    // ── Email field ────────────────────────────────────────
                     Text(
                       'Email',
                       style: GoogleFonts.nunito(
@@ -160,10 +239,7 @@ class _LoginScreenState extends State<LoginScreen>
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
-                    // ── Password field ─────────────────────────────────────
                     Text(
                       'Password',
                       style: GoogleFonts.nunito(
@@ -198,16 +274,11 @@ class _LoginScreenState extends State<LoginScreen>
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 12),
-
-                    // ── Forgot password ────────────────────────────────────
                     Align(
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
-                        onTap: () {
-                          // TODO: navigate to forgot password screen
-                        },
+                        onTap: _handleForgotPassword,
                         child: Text(
                           'Forgot password?',
                           style: GoogleFonts.nunito(
@@ -218,10 +289,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 32),
-
-                    // ── Login button ───────────────────────────────────────
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -268,10 +336,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
-                    // ── Divider ────────────────────────────────────────────
                     Row(
                       children: [
                         const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
@@ -288,17 +353,12 @@ class _LoginScreenState extends State<LoginScreen>
                         const Expanded(child: Divider(color: Color(0xFFCBD5E1))),
                       ],
                     ),
-
                     const SizedBox(height: 24),
-
-                    // ── Google sign in ─────────────────────────────────────
                     SizedBox(
                       width: double.infinity,
                       height: 52,
                       child: OutlinedButton.icon(
-                        onPressed: () {
-                          // TODO: wire Google Sign-In
-                        },
+                        onPressed: _isLoading ? null : _handleGoogleSignIn,
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFCBD5E1)),
                           shape: RoundedRectangleBorder(
@@ -320,10 +380,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 36),
-
-                    // ── Sign up link ───────────────────────────────────────
                     Center(
                       child: GestureDetector(
                         onTap: () => context.go('/signup'),
@@ -347,7 +404,6 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 24),
                   ],
                 ),

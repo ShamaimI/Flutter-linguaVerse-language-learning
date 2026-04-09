@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:linguaverse/theme/app_theme.dart';
 
@@ -62,20 +64,43 @@ class _SignupScreenState extends State<SignupScreen>
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
     HapticFeedback.lightImpact();
-
     setState(() => _isLoading = true);
 
-    // TODO: Replace with real Firebase Auth call
-    // await FirebaseAuth.instance.createUserWithEmailAndPassword(
-    //   email: _emailController.text.trim(),
-    //   password: _passwordController.text,
-    // );
+    try {
+      // Step 1: Create user in Firebase Auth
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
-    await Future.delayed(const Duration(seconds: 2)); // remove when wiring Firebase
+      // Step 2: Update display name
+      await userCredential.user?.updateDisplayName(_nameController.text.trim());
 
-    setState(() => _isLoading = false);
+      // Step 3: Save user info to Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-    if (mounted) context.go('/onboarding/language');
+      if (mounted) context.go('/onboarding/language');
+    } on FirebaseAuthException catch (e) {
+      String message = 'Signup failed. Please try again.';
+      if (e.code == 'email-already-in-use') message = 'An account already exists with this email.';
+      if (e.code == 'invalid-email') message = 'Invalid email address.';
+      if (e.code == 'weak-password') message = 'Password is too weak. Use at least 6 characters.';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -95,8 +120,6 @@ class _SignupScreenState extends State<SignupScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 32),
-
-                    // ── Logo / brand ───────────────────────────────────────
                     Center(
                       child: Container(
                         width: 76,
@@ -117,9 +140,7 @@ class _SignupScreenState extends State<SignupScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
                     Center(
                       child: Text(
                         'LinguaVerse',
@@ -130,7 +151,6 @@ class _SignupScreenState extends State<SignupScreen>
                         ),
                       ),
                     ),
-
                     Center(
                       child: Text(
                         'Create your account to get started.',
@@ -140,10 +160,7 @@ class _SignupScreenState extends State<SignupScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 40),
-
-                    // ── Full Name field ─────────────────────────────────────
                     Text(
                       'Full Name',
                       style: GoogleFonts.nunito(
@@ -165,10 +182,7 @@ class _SignupScreenState extends State<SignupScreen>
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
-                    // ── Email field ────────────────────────────────────────
                     Text(
                       'Email',
                       style: GoogleFonts.nunito(
@@ -192,10 +206,7 @@ class _SignupScreenState extends State<SignupScreen>
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
-                    // ── Password field ─────────────────────────────────────
                     Text(
                       'Password',
                       style: GoogleFonts.nunito(
@@ -230,10 +241,7 @@ class _SignupScreenState extends State<SignupScreen>
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 20),
-
-                    // ── Confirm Password field ────────────────────────────
                     Text(
                       'Confirm Password',
                       style: GoogleFonts.nunito(
@@ -258,8 +266,8 @@ class _SignupScreenState extends State<SignupScreen>
                             color: AppColors.muted,
                             size: 20,
                           ),
-                          onPressed: () =>
-                              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                          onPressed: () => setState(() =>
+                              _obscureConfirmPassword = !_obscureConfirmPassword),
                         ),
                       ),
                       validator: (val) {
@@ -268,10 +276,7 @@ class _SignupScreenState extends State<SignupScreen>
                         return null;
                       },
                     ),
-
                     const SizedBox(height: 32),
-
-                    // ── Signup button ──────────────────────────────────────
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -304,10 +309,7 @@ class _SignupScreenState extends State<SignupScreen>
                               ),
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
-                    // ── Login link ─────────────────────────────────────────
                     Center(
                       child: TextButton(
                         onPressed: () => context.go('/login'),
@@ -342,11 +344,7 @@ class _SignupScreenState extends State<SignupScreen>
         color: AppColors.muted,
         fontSize: 15,
       ),
-      prefixIcon: Icon(
-        icon,
-        color: AppColors.muted,
-        size: 20,
-      ),
+      prefixIcon: Icon(icon, color: AppColors.muted, size: 20),
       suffixIcon: suffix,
       filled: true,
       fillColor: Colors.white,

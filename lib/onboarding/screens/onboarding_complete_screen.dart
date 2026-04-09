@@ -1,23 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../../models/avatar_model.dart';
 import '../../models/language_model.dart';
 import '../widgets/onboarding_widgets.dart';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// OnboardingCompleteScreen
-//
-// Step 5 (final) of onboarding. Celebrates the user's choices and
-// shows a summary before launching into the main app.
-//
-// Animation sequence:
-//   1. Background particles burst in (0ms)
-//   2. Avatar + name slides up (300ms)
-//   3. Summary cards stagger in (600ms, 750ms, 900ms)
-//   4. CTA fades in (1100ms)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class OnboardingCompleteScreen extends StatefulWidget {
   final String? languageCode;
@@ -55,19 +43,12 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
   late AnimationController _cardsCtrl;
   late AnimationController _ctaCtrl;
 
-  // Hero (avatar + headline)
   late Animation<double> _heroFade;
   late Animation<Offset> _heroSlide;
-
-  // Summary cards — 3 staggered
   late List<Animation<double>> _cardFades;
   late List<Animation<Offset>> _cardSlides;
-
-  // CTA button
   late Animation<double> _ctaFade;
   late Animation<Offset> _ctaSlide;
-
-  // Particle burst
   late Animation<double> _bgFade;
 
   @override
@@ -170,10 +151,11 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
     }
   }
 
-  void _launch() {
+  Future<void> _launch() async {
     HapticFeedback.mediumImpact();
-    // Navigate to the main app shell
-    context.go('/home');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboardingComplete', true);
+    if (mounted) context.go('/home');
   }
 
   @override
@@ -184,7 +166,7 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
         builder: (context, _) {
           return Stack(
             children: [
-              // ── Gradient background ──────────────────────────────────────
+              // Gradient background
               FadeTransition(
                 opacity: _bgFade,
                 child: Container(
@@ -203,7 +185,7 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
                 ),
               ),
 
-              // ── Decorative blobs ─────────────────────────────────────────
+              // Decorative blobs
               FadeTransition(
                 opacity: _bgFade,
                 child: Stack(
@@ -252,7 +234,7 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
                 ),
               ),
 
-              // ── Main content ─────────────────────────────────────────────
+              // Main content
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -267,7 +249,6 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
                           opacity: _heroFade,
                           child: Column(
                             children: [
-                              // Completion badge
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 14, vertical: 7),
@@ -281,8 +262,7 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text('🎉',
-                                        style: TextStyle(fontSize: 14)),
+                                    Text('🎉', style: TextStyle(fontSize: 14)),
                                     SizedBox(width: 6),
                                     Text(
                                       'Setup complete',
@@ -297,7 +277,6 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
                               ),
                               const SizedBox(height: AppSpacing.lg),
 
-                              // Large avatar circle
                               Container(
                                 width: 96,
                                 height: 96,
@@ -310,8 +289,7 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color:
-                                          _avatar.accentColor.withOpacity(0.3),
+                                      color: _avatar.accentColor.withOpacity(0.3),
                                       blurRadius: 30,
                                       offset: const Offset(0, 8),
                                     ),
@@ -338,20 +316,16 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
                                     const TextSpan(text: 'You\'re all set!\n'),
                                     TextSpan(
                                       text: _tutorName,
-                                      style: TextStyle(
-                                        color: _avatar.accentColor,
-                                      ),
+                                      style: TextStyle(color: _avatar.accentColor),
                                     ),
-                                    const TextSpan(
-                                        text: ' is ready\nto teach you '),
+                                    const TextSpan(text: ' is ready\nto teach you '),
                                     TextSpan(
                                       text: _language.name,
                                       style: TextStyle(
                                           color: _language.accentColor ==
                                                   const Color(0xFF012169)
                                               ? AppColors.tealLight
-                                              : Color((_language.accentColor
-                                                          .value &
+                                              : Color((_language.accentColor.value &
                                                       0xFFFFFF) |
                                                   0xFFFFFFFF)),
                                     ),
@@ -391,18 +365,20 @@ class _OnboardingCompleteScreenState extends State<OnboardingCompleteScreen>
                                 onTap: _launch,
                               ),
                               const SizedBox(height: AppSpacing.sm),
-                              // White text on dark bg — override the default gradient shadow
                               const SizedBox(height: 4),
                               GestureDetector(
-                                onTap: () => context.go('/home'),
+                                onTap: () async {
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setBool('onboardingComplete', true);
+                                  if (mounted) context.go('/home');
+                                },
                                 child: Text(
                                   'Explore the app first',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.55),
                                     fontSize: 13,
                                     decoration: TextDecoration.underline,
-                                    decorationColor:
-                                        Colors.white.withOpacity(0.4),
+                                    decorationColor: Colors.white.withOpacity(0.4),
                                   ),
                                 ),
                               ),
@@ -545,7 +521,6 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-// Reused dot grid (same as splash)
 class _DotGrid extends StatelessWidget {
   final int rows;
   final int cols;

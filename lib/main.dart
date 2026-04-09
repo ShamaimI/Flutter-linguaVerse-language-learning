@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:linguaverse/firebase_options.dart';
 
 import 'package:linguaverse/auth/lib/auth/login_screen.dart';
 import 'package:linguaverse/auth/lib/auth/signup_screen.dart';
@@ -12,8 +14,12 @@ import 'package:linguaverse/onboarding/screens/level_test_screen.dart';
 import 'package:linguaverse/onboarding/screens/goal_setter_screen.dart';
 import 'package:linguaverse/onboarding/screens/onboarding_complete_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -30,17 +36,10 @@ void main() {
   runApp(const LinguaVerseApp());
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Router
-// ─────────────────────────────────────────────────────────────────────────────
-
 final _router = GoRouter(
-  initialLocation: '/login', // <-- app starts on login screen
+  initialLocation: '/login',
   debugLogDiagnostics: true,
-
   routes: [
-
-    // ── Auth ─────────────────────────────────────────────────────────────────
     GoRoute(
       path: '/login',
       name: 'login',
@@ -51,22 +50,16 @@ final _router = GoRouter(
       name: 'signup',
       builder: (context, state) => const SignupScreen(),
     ),
-
-    // ── Splash ───────────────────────────────────────────────────────────────
     GoRoute(
       path: '/',
       name: 'splash',
       builder: (context, state) => const SplashScreen(),
     ),
-
-    // ── Language Picker ───────────────────────────────────────────────────────
     GoRoute(
       path: '/onboarding/language',
       name: 'language',
       builder: (context, state) => const LanguagePickerScreen(),
     ),
-
-    // ── Avatar Picker ─────────────────────────────────────────────────────────
     GoRoute(
       path: '/onboarding/avatar',
       name: 'avatar',
@@ -77,8 +70,6 @@ final _router = GoRouter(
         );
       },
     ),
-
-    // ── Level Test ────────────────────────────────────────────────────────────
     GoRoute(
       path: '/onboarding/level-test',
       name: 'level-test',
@@ -91,8 +82,6 @@ final _router = GoRouter(
         );
       },
     ),
-
-    // ── Goal Setter ───────────────────────────────────────────────────────────
     GoRoute(
       path: '/onboarding/goal',
       name: 'goal',
@@ -106,8 +95,6 @@ final _router = GoRouter(
         );
       },
     ),
-
-    // ── Onboarding Complete ───────────────────────────────────────────────────
     GoRoute(
       path: '/onboarding/complete',
       name: 'onboarding-complete',
@@ -126,15 +113,12 @@ final _router = GoRouter(
         );
       },
     ),
-
-    // ── Home (placeholder) ────────────────────────────────────────────────────
     GoRoute(
       path: '/home',
       name: 'home',
       builder: (context, state) => const _HomeScreenPlaceholder(),
     ),
   ],
-
   errorBuilder: (context, state) => Scaffold(
     body: Center(
       child: Column(
@@ -153,10 +137,6 @@ final _router = GoRouter(
   ),
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// App root
-// ─────────────────────────────────────────────────────────────────────────────
-
 class LinguaVerseApp extends StatelessWidget {
   const LinguaVerseApp({super.key});
 
@@ -170,10 +150,6 @@ class LinguaVerseApp extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Home placeholder
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _HomeScreenPlaceholder extends StatelessWidget {
   const _HomeScreenPlaceholder();
