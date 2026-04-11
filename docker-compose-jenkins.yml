@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  flutter-jenkins:
+    image: nginx:alpine
+    container_name: linguaverse_jenkins    # different name ✅
+    ports:
+      - "8081:80"                          # different port ✅
+    volumes:
+      - ./build/web:/usr/share/nginx/html  # code volume ✅
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+
+  firebase-jenkins:
+    image: andreysenov/firebase-tools
+    container_name: firebase_jenkins       # different name ✅
+    ports:
+      - "4001:4000"                        # different port ✅
+    volumes:
+      - firebase_data_jenkins:/home/node
+
+volumes:
+  firebase_data_jenkins:
