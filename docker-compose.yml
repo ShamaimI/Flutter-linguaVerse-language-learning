@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   flutter-web:
-    image: YOUR_DOCKERHUB_USERNAME/linguaverse:latest
+    image: shumaimiftikhar/linguaverse:latest
     container_name: linguaverse_app
     ports:
       - "80:80"
@@ -12,7 +12,7 @@ services:
     container_name: linguaverse_db
     ports:
       - "4000:4000"
-      - "8080:8080"
+      - "8082:8080"
     volumes:
       - firebase_data:/home/node       # persistent volume ✅
     command: firebase emulators:start --only firestore --project demo-linguaverse
